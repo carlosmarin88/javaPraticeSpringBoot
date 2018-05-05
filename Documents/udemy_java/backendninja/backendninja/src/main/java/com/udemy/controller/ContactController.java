@@ -4,6 +4,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.udemy.constant.ViewConstant;
-import com.udemy.entity.Contact;
 import com.udemy.model.ContactModel;
 import com.udemy.service.ContactService;
 
@@ -33,6 +35,11 @@ public class ContactController {
 		return "redirect:/contacts/showcontacts";
 	}
 	
+	//se puede escribir diferentes tipo de expresiones por ejemplo 
+	//("hasRole('ROLE_USER') or/and hasRole('ROLE_ADMIN')")
+	//tambien del siguiente tipo "permitAll()" etc
+	//se puede añadir a nivel de  clase o servicio tambien
+	@PreAuthorize("hasRole('ROLE_USER')")
 	@GetMapping("/contactform")
 	public String redirectContactForm(@RequestParam(name="id", required=false) int id,
 			Model model) {
@@ -63,8 +70,17 @@ public class ContactController {
 	@GetMapping("/showcontacts")
 	public ModelAndView showContacts() {
 		ModelAndView ma = new ModelAndView(ViewConstant.CONTACTS);
-		ma.addObject("contacts", contactService.listAllContacts());
+		ma.addObject("contacts", contactService.listAllContacts()); 
+		ma.addObject("username", obtenerUsuarioLogeado().getUsername());
+		
 		return ma;
+	}
+	/**
+	 * Recupero el usuario logueado de la aplicacion
+	 * @return usuario logueado
+	 */
+	private User obtenerUsuarioLogeado() {
+		return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	}
 	
 	@GetMapping("/removecontact")
